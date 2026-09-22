@@ -106,6 +106,18 @@ img{max-width:100%;display:block;}
   outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(34,52,107,.12); background:#fff;
 }
 .toggle-pass{position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); background:none; border:none; padding:4px;}
+.field input[type="file"]{padding:9px 12px; font-size:13.5px; cursor:pointer;}
+.file-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+.file-chip{display:flex; align-items:center; gap:7px; background:#f1f3f8; border:1px solid var(--border); border-radius:9px; padding:6px 8px 6px 10px; font-size:12.5px; color:var(--text); max-width:100%;}
+.file-chip img{width:26px; height:26px; border-radius:5px; object-fit:cover; flex-shrink:0;}
+.file-chip .fc-icon{width:26px; height:26px; border-radius:5px; background:var(--info-bg); color:var(--info); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.file-chip span{max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.file-chip button{background:none; border:none; cursor:pointer; color:var(--muted); display:flex; padding:2px;}
+.file-chip button:hover{color:var(--danger);}
+.file-chip.existing{background:var(--success-bg); border-color:#b7e6cc;}
+.nota-links{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+.nota-links a{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--navy); background:#f1f3f8; border:1px solid var(--border); border-radius:8px; padding:6px 10px; text-decoration:none;}
+.nota-links a:hover{border-color:var(--navy);}
 .btn{
   border:none; border-radius:10px; padding:12px 18px; font-size:14.5px; font-weight:700;
   cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
@@ -270,8 +282,6 @@ tbody tr:last-child td{border-bottom:none;}
   background:#fff; border-radius:16px; width:100%; max-width:640px; box-shadow:0 30px 70px rgba(0,0,0,.35);
   animation:pop .18s ease;
 }
-.modal.modal-wide{max-width:920px;}
-@media (max-width:960px){ .modal.modal-wide{max-width:100%;} }
 @keyframes pop{from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:none;}}
 .modal-head{
   display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border);
@@ -302,16 +312,6 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
 .toast.show{transform:translateY(0); opacity:1;}
 .toast.success{background:#0f4a2e;}
 .toast.error{background:#5c1712;}
-
-.chart-year-select{
-  padding:8px 14px; border:1.5px solid var(--border); border-radius:9px; font-size:13px; font-weight:700;
-  background:#fbfcfe; color:var(--navy); cursor:pointer;
-}
-.chart-year-select:focus{outline:none; border-color:var(--navy);}
-#expense-chart .bar-group{cursor:pointer;}
-#expense-chart .bar-rect{transition:opacity .15s, filter .15s;}
-#expense-chart .bar-group:hover .bar-rect{opacity:.82;}
-#expense-chart .bar-value{font-weight:700;}
 
 /* ---------- MOBILE DATA CARDS ---------- */
 .mobile-cards{display:none;}
@@ -377,6 +377,12 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
 </head>
 <body>
 
+<!-- ================= SESSION SPLASH ================= -->
+<div id="session-splash" style="position:fixed; inset:0; z-index:200; background:var(--navy-950); display:flex; align-items:center; justify-content:center;">
+  <div style="width:34px; height:34px; border-radius:50%; border:3px solid rgba(255,255,255,.18); border-top-color:#fff; animation:spin .8s linear infinite;"></div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
 <!-- ================= LOGIN VIEW ================= -->
 <div id="view-login">
   <div class="login-card">
@@ -401,7 +407,7 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
         </button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">
+    <button id="login-btn" class="btn btn-primary" onclick="doLogin()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
       Masuk
     </button>
@@ -496,22 +502,6 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
         </div>
 
         <div class="card section-card">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:4px;">
-            <div>
-              <div class="section-title" style="margin-bottom:2px;">Grafik Pengeluaran Setahun</div>
-              <p class="section-desc" style="margin-bottom:0;">Total nilai pengadaan berstatus Disetujui &amp; Selesai per bulan &mdash; klik batang untuk lihat detail</p>
-            </div>
-            <select id="chart-year" class="chart-year-select" onchange="renderExpenseChart()"></select>
-          </div>
-          <div style="overflow-x:auto; margin-top:10px;">
-            <svg id="expense-chart" viewBox="0 0 780 240" style="width:100%; height:auto; min-width:520px; display:block;"></svg>
-          </div>
-          <div id="expense-chart-empty" class="empty-state" style="display:none; padding:24px;">
-            <p>Belum ada pengadaan berstatus Disetujui/Selesai pada tahun ini.</p>
-          </div>
-        </div>
-
-        <div class="card section-card">
           <div class="section-title">Pengadaan Terbaru</div>
           <p class="section-desc">5 data pengadaan yang terakhir diperbarui</p>
           <div class="table-wrap"><table>
@@ -591,6 +581,8 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
             <div class="field"><label>Role</label>
               <select id="p-role" disabled><option>Admin IT</option><option>Staff Pengadaan</option><option>Approver</option></select>
             </div>
+            <div class="field"><label>Email</label><input id="p-email" type="email"></div>
+            <div class="field"><label>No. HP</label><input id="p-hp" type="text"></div>
           </div>
           <button class="btn btn-primary" style="width:auto; margin-top:6px;" onclick="saveProfile()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
@@ -630,28 +622,6 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
           </table></div>
         </div>
 
-        <div class="card section-card">
-          <div class="section-title">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
-            Koneksi Database
-          </div>
-          <p class="section-desc">Hubungkan ke Google Spreadsheet sebagai database (via Google Apps Script). Kosongkan untuk tetap memakai Mode Demo.</p>
-          <div class="field"><label>URL Google API / Apps Script</label><input id="cfg-url" type="text" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
-          <div class="profile-grid">
-            <div class="field"><label>Spreadsheet ID</label><input id="cfg-sheet" type="text" placeholder="1s_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
-            <div class="field"><label>Google Drive Folder ID</label><input id="cfg-drive" type="text" placeholder="1HvUvxxxxxxxxxxxxxxxxxxxxxxx"></div>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="width:auto;" onclick="saveConfig()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
-              Simpan Konfigurasi
-            </button>
-            <button class="btn btn-outline" onclick="testConnection()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-              Test Koneksi
-            </button>
-          </div>
-        </div>
       </section>
 
     </div>
@@ -713,32 +683,21 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
         <div class="field"><label>Status</label>
           <select id="pf-status"><option>Draft</option><option>Diajukan</option><option>Disetujui</option><option>Dikembalikan</option><option>Selesai</option><option>Ditolak</option></select>
         </div>
-        <div class="field"><label>Lampiran (Foto/Nota)</label><input id="pf-file" type="file"></div>
+        <div class="field full">
+          <label>Lampiran Foto/Nota <span style="font-weight:500; color:var(--muted-2);">(maks. 5 file, 8MB/file)</span></label>
+          <input id="pf-file" type="file" accept="image/*,application/pdf" multiple onchange="handleFileSelect(event)">
+          <div id="pf-file-list" class="file-list"></div>
+          <p class="section-desc" style="margin:6px 0 0;">Foto otomatis tersimpan ke Google Drive dalam folder <b>Nama RS &rsaquo; Tanggal Pengajuan</b>.</p>
+        </div>
         <div class="field full"><label>Catatan</label><textarea id="pf-catatan" placeholder="Keterangan tambahan..."></textarea></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('modal-form')">Batal</button>
-      <button class="btn btn-primary" style="width:auto;" onclick="saveForm()">
+      <button class="btn btn-primary" style="width:auto;" onclick="saveForm(this)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
         Simpan Data
       </button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= MODAL: DETAIL PENGELUARAN BULAN ================= -->
-<div class="modal-overlay" id="modal-month">
-  <div class="modal modal-wide">
-    <div class="modal-head">
-      <h3 id="month-modal-title">Detail Pengeluaran</h3>
-      <button class="modal-close" onclick="closeModal('modal-month')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" id="month-modal-body"></div>
-    <div class="modal-foot">
-      <button class="btn btn-primary" style="width:auto;" onclick="closeModal('modal-month')">Tutup</button>
     </div>
   </div>
 </div>
@@ -748,7 +707,7 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
   <div class="modal">
     <div class="modal-head">
       <h3>Detail Pengadaan</h3>
-      <button class="modal-close" onclick="closeViewModal()">
+      <button class="modal-close" onclick="closeModal('modal-view')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -758,7 +717,7 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
         Cetak
       </button>
-      <button class="btn btn-primary" style="width:auto;" onclick="closeViewModal()">Tutup</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="closeModal('modal-view')">Tutup</button>
     </div>
   </div>
 </div>
@@ -795,59 +754,24 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
 <div class="toast" id="toast"></div>
 
 <script>
-// ==================== STORAGE & API ====================
-// Mode otomatis: jika scriptUrl terkonfigurasi → pakai Google Sheets
-// Jika tidak → pakai localStorage (mode demo)
-let CFG = { scriptUrl:'', spreadsheetId:'', driveFolderId:'' };
-
-const LS_KEYS = { users:'sippi_dexa_users_v1', pengadaan:'sippi_dexa_pengadaan_v1', nextP:'sippi_dexa_nextp_v1' };
-let lsAvailable = true;
-function lsGet(key, fallback){
-  try{
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  }catch(e){ lsAvailable = false; return fallback; }
-}
-function lsSet(key, value){
-  try{ localStorage.setItem(key, JSON.stringify(value)); }
-  catch(e){ lsAvailable = false; /* penyimpanan browser tidak tersedia, lanjut pakai memori */ }
-}
-
-/* ---------------- SEED DATA (dipakai hanya jika localStorage masih kosong) ---------------- */
-const SEED_USERS = [
-    {id:'U001', nama:'Admin IT', username:'admin123', password:'admin123', jabatan:'IT Manager', divisi:'IT', role:'Admin IT', email:'admin@dexaarfindo.co.id'},
-    {id:'U002', nama:'Staff Pengadaan', username:'support', password:'123', jabatan:'IT Support', divisi:'IT', role:'Staff Pengadaan', email:'support@dexaarfindo.co.id'},
-    {id:'U003', nama:'Hot Otniel Pasaribu', username:'otniel', password:'123', jabatan:'IT Hardware', divisi:'IT Support', role:'Staff Pengadaan', email:'otniel@dexaarfindo.co.id'},
-    {id:'U004', nama:'Katarina Maruli Nababan', username:'katarina', password:'123', jabatan:'IT Koordinator', divisi:'IT Support', role:'Approver', email:'katarina@dexaarfindo.co.id'},
-];
-const SEED_PENGADAAN = [
-    {id:'P001', kode:'PGD-DXA-2026-0001', namaPerangkat:'Laptop Lenovo ThinkPad E14', instansi:'RS Dexa Medika Semarang', kategori:'Laptop', merk:'ThinkPad E14 Gen5', jumlah:2, satuan:'Unit', hargaSatuan:12500000, total:25000000, vendor:'PT. Mitra Solusi Teknologi', noPO:'PO-0921', divisi:'IT Support', tglAjukan:'2026-08-10', tglButuh:'2026-08-20', status:'Disetujui', catatan:'Pengganti laptop rusak tim support.'},
-    {id:'P002', kode:'PGD-DXA-2026-0002', namaPerangkat:'Printer Epson L3210', instansi:'RS Dexa Medika Kudus', kategori:'Printer', merk:'Epson L3210', jumlah:3, satuan:'Unit', hargaSatuan:2350000, total:7050000, vendor:'CV. Sumber Berkah Komputer', noPO:'PO-0933', divisi:'Finance', tglAjukan:'2026-08-15', tglButuh:'2026-08-25', status:'Diajukan', catatan:'Untuk cabang Semarang & Kudus.'},
-    {id:'P003', kode:'PGD-DXA-2026-0003', namaPerangkat:'Switch Cisco 24 Port', instansi:'Kantor Pusat Dexa Arfindo Pratama', kategori:'Jaringan (Router/Switch)', merk:'Cisco SG350-28', jumlah:1, satuan:'Unit', hargaSatuan:8900000, total:8900000, vendor:'PT. Netwave Indonesia', noPO:'', divisi:'IT Support', tglAjukan:'2026-08-20', tglButuh:'2026-09-01', status:'Draft', catatan:'Upgrade jaringan kantor pusat.'},
-    {id:'P004', kode:'PGD-DXA-2026-0004', namaPerangkat:'Lisensi Microsoft 365 Business', instansi:'Kantor Pusat Dexa Arfindo Pratama', kategori:'Software & Lisensi', merk:'Microsoft 365 Business Standard', jumlah:25, satuan:'Lisensi', hargaSatuan:1450000, total:36250000, vendor:'PT. Datacomm Diangraha', noPO:'PO-0940', divisi:'HRD', tglAjukan:'2026-08-25', tglButuh:'2026-09-05', status:'Selesai', catatan:'Perpanjangan tahunan seluruh divisi.'},
-    {id:'P005', kode:'PGD-DXA-2026-0005', namaPerangkat:'PC Rakitan Kasir', instansi:'Apotek K24 Cabang Baru', kategori:'Komputer / PC', merk:'Custom Build i3 12100', jumlah:5, satuan:'Unit', hargaSatuan:6200000, total:31000000, vendor:'Toko Komputer Jaya', noPO:'', divisi:'Operasional', tglAjukan:'2026-08-28', tglButuh:'2026-09-10', status:'Diajukan', catatan:'Untuk apotek cabang baru.'},
-    {id:'P006', kode:'PGD-DXA-2026-0006', namaPerangkat:'UPS APC 1200VA', instansi:'RS Dexa Medika Semarang', kategori:'Aksesoris', merk:'APC Back-UPS BX1200', jumlah:8, satuan:'Unit', hargaSatuan:1150000, total:9200000, vendor:'PT. Mitra Solusi Teknologi', noPO:'', divisi:'IT Support', tglAjukan:'2026-09-01', tglButuh:'2026-09-12', status:'Ditolak', catatan:'Anggaran belum disetujui kuartal ini.'},
-];
-
-/* ---------------- DEMO DATA STORE (localStorage, fallback in-memory) ---------------- */
-let DB = {
-  users: lsGet(LS_KEYS.users, SEED_USERS),
-  pengadaan: lsGet(LS_KEYS.pengadaan, SEED_PENGADAAN),
+/* =====================================================================
+   KONFIGURASI BACKEND
+   Backend selalu memakai Google Apps Script di bawah ini — tidak ada lagi
+   pengaturan koneksi database yang bisa diubah dari halaman Pengaturan.
+   Ganti nilai ini jika Anda men-deploy ulang Apps Script (lihat Code.gs).
+===================================================================== */
+const CFG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwVK2tYlf7PQ9cti3UjKKGQW01_Je2uZYxaOlZG0MZVuUIOf1zSRDjGNc57LuM7kK64-g/exec',
 };
-let nextP = lsGet(LS_KEYS.nextP, 7);
-// simpan seed pertama kali (agar konsisten & tersimpan sejak awal)
-lsSet(LS_KEYS.users, DB.users);
-lsSet(LS_KEYS.pengadaan, DB.pengadaan);
-lsSet(LS_KEYS.nextP, nextP);
-function persistDemo(){
-  lsSet(LS_KEYS.users, DB.users);
-  lsSet(LS_KEYS.pengadaan, DB.pengadaan);
-  lsSet(LS_KEYS.nextP, nextP);
-}
+
+const SESSION_KEY = 'sippi_session';
 
 /* ---------------- STATE ---------------- */
 let currentUser = null;
+let authToken = null;
 let editingUserId = null;
+let pengadaanFiles = [];   // file baru yang dipilih di form (belum terupload)
+let existingNota = [];     // nota yang sudah tersimpan saat mode edit
 
 /* ---------------- HELPERS ---------------- */
 const $ = id => document.getElementById(id);
@@ -865,72 +789,19 @@ function toast(msg, type){
   window._toastTimer = setTimeout(()=>{ t.className = 'toast'; }, 2600);
 }
 
-/* ---------------- API LAYER (demo <-> real backend) ---------------- */
+/* ---------------- API LAYER ---------------- */
 async function api(action, payload){
-  if(CFG.scriptUrl){
-    try{
-      const res = await fetch(CFG.scriptUrl, {method:'POST', body: JSON.stringify({action, spreadsheetId:CFG.spreadsheetId, driveFolderId:CFG.driveFolderId, ...payload})});
-      const text = await res.text();
-      let json;
-      try{ json = JSON.parse(text); }
-      catch(parseErr){
-        toast('Backend Apps Script tidak merespons JSON (kemungkinan URL salah, belum di-deploy ulang, atau akses belum "Anyone"). Status: '+res.status, 'error');
-        return {success:false, error:'Respons bukan JSON (status '+res.status+')'};
-      }
-      return json;
-    }catch(err){
-      toast('Gagal menghubungi server. Periksa URL Apps Script & koneksi internet.', 'error');
-      return {success:false, error:String(err)};
+  try{
+    const res = await fetch(CFG.scriptUrl, {method:'POST', body: JSON.stringify({action, token: authToken, ...payload})});
+    const data = await res.json();
+    if(!data.success && data.code === 'AUTH'){
+      // sesi habis / token tidak valid -> paksa login ulang, tapi jangan ganggu jika ini baru validasi awal
+      if(currentUser) forceReLogin_('Sesi Anda berakhir. Silakan masuk kembali.');
     }
-  }
-  return demoApi(action, payload);
-}
-function demoApi(action, payload){
-  switch(action){
-    case 'login':{
-      const u = DB.users.find(u=>u.username===payload.username && u.password===payload.password);
-      return u ? {success:true,user:u} : {success:false, error:'Username atau password salah.'};
-    }
-    case 'getPengadaan': return {success:true, data:DB.pengadaan};
-    case 'savePengadaan':{
-      if(payload.id){
-        const i = DB.pengadaan.findIndex(p=>p.id===payload.id);
-        if(i>-1) DB.pengadaan[i] = {...DB.pengadaan[i], ...payload};
-      } else {
-        const id = 'P'+String(nextP).padStart(3,'0');
-        const kode = 'PGD-DXA-2026-'+String(nextP).padStart(4,'0');
-        DB.pengadaan.push({...payload, id, kode});
-        nextP++;
-      }
-      persistDemo();
-      return {success:true};
-    }
-    case 'deletePengadaan':
-      DB.pengadaan = DB.pengadaan.filter(p=>p.id!==payload.id);
-      persistDemo();
-      return {success:true};
-    case 'getUsers': return {success:true, data:DB.users};
-    case 'saveUser':{
-      if(payload.id){
-        const i = DB.users.findIndex(u=>u.id===payload.id);
-        if(i>-1) DB.users[i] = {...DB.users[i], ...payload};
-      } else {
-        DB.users.push({...payload, id:'U'+String(DB.users.length+1).padStart(3,'0')});
-      }
-      persistDemo();
-      return {success:true};
-    }
-    case 'deleteUser':
-      DB.users = DB.users.filter(u=>u.id!==payload.id);
-      persistDemo();
-      return {success:true};
-    case 'ping': return {success:true, message: lsAvailable ? 'Mode Demo aktif — data tersimpan di penyimpanan lokal browser ini (belum terhubung ke Apps Script).' : 'Mode Demo aktif — penyimpanan lokal browser tidak tersedia di sini, data sementara (reset saat reload).'};
-    case 'resetDemo':
-      DB = {users:[...SEED_USERS], pengadaan:[...SEED_PENGADAAN]};
-      nextP = 7;
-      persistDemo();
-      return {success:true};
-    default: return {success:false, error:'Aksi tidak dikenal'};
+    return data;
+  }catch(err){
+    toast('Gagal menghubungi server. Periksa koneksi internet Anda.', 'error');
+    return {success:false, error:String(err)};
   }
 }
 
@@ -948,14 +819,14 @@ async function doLogin(){
     $('login-error').style.display = 'block';
     return;
   }
+  const btn = $('login-btn'); btn.disabled = true;
   const res = await api('login', {username, password});
+  btn.disabled = false;
   if(res.success){
+    authToken = res.token;
     currentUser = res.user;
-    $('view-login').style.display = 'none';
-    $('app-shell').classList.add('active');
-    fillSidebarUser();
-    fillProfile();
-    goTo('dashboard');
+    saveSession_(authToken, 'dashboard');
+    enterApp_('dashboard');
   } else {
     $('login-error').textContent = res.error || 'Login gagal.';
     $('login-error').style.display = 'block';
@@ -963,9 +834,57 @@ async function doLogin(){
 }
 function doLogout(){
   currentUser = null;
+  authToken = null;
+  clearSession_();
   $('app-shell').classList.remove('active');
   $('view-login').style.display = 'flex';
   $('login-username').value=''; $('login-password').value='';
+}
+function forceReLogin_(msg){
+  doLogout();
+  if(msg){ $('login-error').textContent = msg; $('login-error').style.display = 'block'; }
+}
+function enterApp_(view){
+  $('view-login').style.display = 'none';
+  $('app-shell').classList.add('active');
+  fillSidebarUser();
+  fillProfile();
+  goTo(view);
+}
+
+/* ---------------- PERSISTENT SESSION (survive page refresh) ----------------
+   Hanya token sesi (bukan password) yang disimpan di browser, sehingga saat
+   halaman di-refresh, pengguna tidak perlu login ulang dan tetap berada
+   di halaman yang sama sebelum refresh. ------------------------------------ */
+function saveSession_(token, view){
+  try{ localStorage.setItem(SESSION_KEY, JSON.stringify({token, view: view || 'dashboard'})); }catch(e){}
+}
+function updateSessionView_(view){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    const s = raw ? JSON.parse(raw) : {};
+    s.view = view;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  }catch(e){}
+}
+function clearSession_(){
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+}
+async function restoreSession_(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }catch(e){}
+  if(saved && saved.token){
+    authToken = saved.token;
+    const res = await api('session', {});
+    if(res.success){
+      currentUser = res.user;
+      enterApp_(saved.view || 'dashboard');
+      $('session-splash').style.display = 'none';
+      return;
+    }
+  }
+  authToken = null;
+  $('session-splash').style.display = 'none';
 }
 
 /* ---------------- NAV ---------------- */
@@ -977,6 +896,7 @@ function goTo(view){
   const titles = {dashboard:'Dashboard', input:'Laporan Saya', settings:'Pengaturan'};
   $('topbar-title').textContent = titles[view];
   closeSidebar();
+  updateSessionView_(view);
   if(view==='dashboard') renderDashboard();
   if(view==='input') renderTable();
   if(view==='settings') renderUserMgmt();
@@ -991,6 +911,7 @@ function fillSidebarUser(){
   rb.textContent = currentUser.role;
   rb.className = 'role-badge' + (currentUser.role==='Admin IT' ? ' admin' : '');
   $('dash-username').textContent = currentUser.nama;
+  // Manajemen Pengguna: hanya Admin IT yang dapat melihat & mengelola user lain.
   $('usermgmt-card').style.display = currentUser.role==='Admin IT' ? 'block' : 'none';
 
   $('chip-avatar').textContent = initials(currentUser.nama);
@@ -1022,9 +943,6 @@ async function renderDashboard(){
     `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data pengadaan.</td></tr>`;
   $('dash-recent-cards').innerHTML = recent.length ? recent.map(dashCardHtml).join('') :
     `<div class="empty-state"><p>Belum ada data pengadaan.</p></div>`;
-
-  populateChartYearFilter(data);
-  renderExpenseChart();
 }
 function dashCardHtml(p){
   return `<div class="data-card dash-card">
@@ -1035,111 +953,6 @@ function dashCardHtml(p){
     <div class="dc-meta"><span>${p.kategori}</span><span>${fmtDate(p.tglAjukan)}</span></div>
     <div class="dc-actions"><button class="act-btn view" onclick="viewItem('${p.id}')">${svgEye()}</button></div>
   </div>`;
-}
-
-/* ---------------- GRAFIK PENGELUARAN SETAHUN (BAR CHART) ---------------- */
-const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-
-function populateChartYearFilter(data){
-  const sel = $('chart-year');
-  if(!sel) return;
-  const years = [...new Set(data.map(p=>String(p.tglAjukan||'').slice(0,4)).filter(Boolean))];
-  const nowYear = String(new Date().getFullYear());
-  if(!years.includes(nowYear)) years.push(nowYear);
-  years.sort((a,b)=>b-a);
-  const current = sel.value;
-  sel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-  sel.value = years.includes(current) ? current : years[0];
-}
-
-function renderExpenseChart(){
-  const svg = $('expense-chart');
-  if(!svg) return;
-  const year = $('chart-year').value;
-  const totals = new Array(12).fill(0);
-
-  allPengadaan.forEach(p=>{
-    if(!p.tglAjukan || String(p.tglAjukan).slice(0,4) !== year) return;
-    if(!(p.status==='Disetujui' || p.status==='Selesai')) return;
-    const m = parseInt(String(p.tglAjukan).slice(5,7), 10) - 1;
-    if(m>=0 && m<12) totals[m] += Number(p.total)||0;
-  });
-
-  const max = Math.max(...totals, 1);
-  const W=780, H=240, padL=54, padB=32, padT=16, gap=12;
-  const barAreaW = W - padL - 14;
-  const barW = (barAreaW - gap*11) / 12;
-
-  let grid = '';
-  for(let i=0;i<=4;i++){
-    const y = padT + (H-padT-padB) * (1 - i/4);
-    const val = Math.round(max * i/4);
-    grid += `<line x1="${padL}" y1="${y}" x2="${W-6}" y2="${y}" stroke="#e5e8f0" stroke-width="1"/>`;
-    grid += `<text x="${padL-8}" y="${y+4}" font-size="10" fill="#9aa1b8" text-anchor="end">${shortRupiah(val)}</text>`;
-  }
-
-  let bars = '';
-  totals.forEach((val,i)=>{
-    const h = max>0 ? (val/max) * (H-padT-padB) : 0;
-    const x = padL + i*(barW+gap);
-    const y = H - padB - h;
-    const color = val>0 ? '#22346b' : '#e5e8f0';
-    bars += `<g class="bar-group" onclick="showMonthDetail('${year}','${String(i+1).padStart(2,'0')}')">
-      <rect class="bar-rect" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h,2).toFixed(1)}" rx="6" fill="${color}"></rect>
-      ${val>0 ? `<text class="bar-value" x="${(x+barW/2).toFixed(1)}" y="${(y-6).toFixed(1)}" font-size="10" fill="#22346b" text-anchor="middle">${shortRupiah(val)}</text>` : ''}
-      <text x="${(x+barW/2).toFixed(1)}" y="${H-padB+16}" font-size="11" fill="#697089" text-anchor="middle">${MONTH_LABELS[i]}</text>
-      <title>${MONTH_NAMES[i]} ${year}: ${rupiah(val)}</title>
-    </g>`;
-  });
-
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.innerHTML = grid + bars;
-
-  const hasData = totals.some(t=>t>0);
-  $('expense-chart-empty').style.display = hasData ? 'none' : 'block';
-  svg.style.display = hasData ? 'block' : 'none';
-}
-function shortRupiah(n){
-  n = Number(n)||0;
-  if(n>=1000000000) return (n/1000000000).toFixed(1).replace(/\.0$/,'')+' M';
-  if(n>=1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'')+' jt';
-  if(n>=1000) return Math.round(n/1000)+' rb';
-  return String(n);
-}
-function showMonthDetail(year, monthNum){
-  const items = allPengadaan.filter(p=>
-    p.tglAjukan && String(p.tglAjukan).slice(0,4)===year && String(p.tglAjukan).slice(5,7)===monthNum &&
-    (p.status==='Disetujui' || p.status==='Selesai')
-  );
-  const total = items.reduce((s,p)=> s + (Number(p.total)||0), 0);
-  const monthName = MONTH_NAMES[parseInt(monthNum,10)-1];
-  $('month-modal-title').textContent = `Pengeluaran — ${monthName} ${year}`;
-
-  if(!items.length){
-    $('month-modal-body').innerHTML = `<div class="empty-state" style="padding:20px 0;">
-      <p>Tidak ada pengadaan berstatus Disetujui/Selesai pada bulan ini.</p>
-    </div>`;
-  } else {
-    $('month-modal-body').innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); border-radius:10px; padding:12px 16px; margin-bottom:16px;">
-        <span style="font-size:13px; font-weight:600; color:var(--muted);">${items.length} item pengadaan</span>
-        <span style="font-size:18px; font-weight:800; color:var(--navy);">${rupiah(total)}</span>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Perangkat</th><th>Rumah Sakit / Instansi</th><th>Status</th><th>Total</th><th></th></tr></thead>
-        <tbody>
-          ${items.map(p=>`<tr>
-            <td class="name-cell">${p.namaPerangkat}</td>
-            <td>${p.instansi||'-'}</td>
-            <td><span class="status-chip ${statusClass(p.status)}">${p.status}</span></td>
-            <td>${rupiah(p.total)}</td>
-            <td><button class="act-btn view" title="Lihat" onclick="viewItemFromMonth('${p.id}','${year}','${monthNum}')">${svgEye()}</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>`;
-  }
-  openModal('modal-month');
 }
 function statCard(bg,color,icon,num,label){
   return `<div class="card stat-card"><div class="stat-icon" style="background:${bg}; color:${color};">${icon}</div><div><h3>${num}</h3><p>${label}</p></div></div>`;
@@ -1231,6 +1044,8 @@ function svgEye(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="
 function svgEdit(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;}
 function svgTrash(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>`;}
 function svgPrint(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>`;}
+function svgFile(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>`;}
+function svgClose(){return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6L6 18M6 6l12 12"/></svg>`;}
 
 /* ---------------- FORM PENGADAAN ---------------- */
 function openForm(){
@@ -1239,6 +1054,8 @@ function openForm(){
   $('pf-kategori').value='Laptop'; $('pf-satuan').value='Unit'; $('pf-status').value='Draft';
   $('pf-jumlah').value=1; $('pf-harga').value=''; $('pf-total').value='';
   $('pf-tglajukan').value = new Date().toISOString().slice(0,10);
+  pengadaanFiles = []; existingNota = []; $('pf-file').value = '';
+  renderFileList();
   openModal('modal-form');
 }
 function editItem(id){
@@ -1251,6 +1068,8 @@ function editItem(id){
   $('pf-divisi').value=p.divisi||''; $('pf-tglajukan').value=p.tglAjukan||''; $('pf-tglbutuh').value=p.tglButuh||'';
   $('pf-status').value=p.status; $('pf-catatan').value=p.catatan||'';
   calcTotal();
+  pengadaanFiles = []; existingNota = Array.isArray(p.notaFiles) ? p.notaFiles : []; $('pf-file').value = '';
+  renderFileList();
   openModal('modal-form');
 }
 function calcTotal(){
@@ -1258,7 +1077,59 @@ function calcTotal(){
   const harga = parseFloat($('pf-harga').value)||0;
   $('pf-total').value = rupiah(jml*harga);
 }
-async function saveForm(){
+
+/* ---- Upload foto/nota: dikonversi ke base64 lalu dikirim ke Apps Script,
+   yang otomatis membuat folder "Nama RS / Tanggal Pengajuan" di Drive. ---- */
+const MAX_FILES = 5, MAX_FILE_MB = 8;
+async function handleFileSelect(ev){
+  const picked = Array.from(ev.target.files || []);
+  ev.target.value = '';
+  if(!picked.length) return;
+  if(existingNota.length + pengadaanFiles.length + picked.length > MAX_FILES){
+    toast(`Maksimal ${MAX_FILES} foto nota per data.`, 'error'); return;
+  }
+  for(const f of picked){
+    if(!/^image\/(jpeg|png|webp|gif|heic|heif)$/i.test(f.type) && f.type !== 'application/pdf'){
+      toast(`${f.name}: format tidak didukung.`, 'error'); continue;
+    }
+    if(f.size > MAX_FILE_MB*1024*1024){
+      toast(`${f.name}: ukuran melebihi ${MAX_FILE_MB}MB.`, 'error'); continue;
+    }
+    const data = await fileToBase64_(f);
+    pengadaanFiles.push({name:f.name, mime:f.type, data, _previewUrl: f.type.startsWith('image/') ? URL.createObjectURL(f) : null});
+  }
+  renderFileList();
+}
+function fileToBase64_(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(String(r.result).split(',')[1] || '');
+    r.onerror = ()=> reject(new Error('Gagal membaca file'));
+    r.readAsDataURL(file);
+  });
+}
+function removeNewFile(idx){
+  pengadaanFiles.splice(idx,1);
+  renderFileList();
+}
+function renderFileList(){
+  const el = $('pf-file-list');
+  if(!el) return;
+  const existingHtml = existingNota.map(f=>`
+    <div class="file-chip existing" title="Sudah tersimpan di Drive">
+      <div class="fc-icon">${svgFile()}</div>
+      <span>${f.name}</span>
+    </div>`).join('');
+  const newHtml = pengadaanFiles.map((f,i)=>`
+    <div class="file-chip" title="${f.name}">
+      ${f._previewUrl ? `<img src="${f._previewUrl}">` : `<div class="fc-icon">${svgFile()}</div>`}
+      <span>${f.name}</span>
+      <button type="button" onclick="removeNewFile(${i})">${svgClose()}</button>
+    </div>`).join('');
+  el.innerHTML = existingHtml + newHtml;
+}
+
+async function saveForm(btnEl){
   const nama = $('pf-nama').value.trim();
   if(!nama){ toast('Nama perangkat wajib diisi.', 'error'); return; }
   const jml = parseFloat($('pf-jumlah').value)||0;
@@ -1280,8 +1151,11 @@ async function saveForm(){
     tglButuh: $('pf-tglbutuh').value,
     status: $('pf-status').value,
     catatan: $('pf-catatan').value,
+    files: pengadaanFiles.map(f=>({name:f.name, mime:f.mime, data:f.data})),
   };
+  if(btnEl) btnEl.disabled = true;
   const res = await api('savePengadaan', payload);
+  if(btnEl) btnEl.disabled = false;
   if(res.success){
     toast('Data pengadaan berhasil disimpan.', 'success');
     closeModal('modal-form');
@@ -1295,8 +1169,13 @@ async function deleteItem(id){
   else toast(res.error || 'Gagal menghapus.', 'error');
 }
 function viewItem(id){
-  const p = allPengadaan.find(x=>x.id===id) || DB.pengadaan.find(x=>x.id===id);
+  const p = allPengadaan.find(x=>x.id===id);
   if(!p) return;
+  const notaHtml = (p.notaFiles && p.notaFiles.length) ? `
+    <div class="detail-item full">
+      <div class="dl">Lampiran Foto / Nota</div>
+      <div class="nota-links">${p.notaFiles.map(f=>`<a href="${f.url}" target="_blank" rel="noopener">${svgFile()} ${f.name}</a>`).join('')}</div>
+    </div>` : '';
   $('view-body').innerHTML = `
     <div class="detail-grid">
       <div class="detail-item full"><div class="dl">ID Pengadaan</div><div class="dv id-code">${p.kode}</div></div>
@@ -1314,26 +1193,11 @@ function viewItem(id){
       <div class="detail-item"><div class="dl">Tanggal Dibutuhkan</div><div class="dv">${fmtDate(p.tglButuh)}</div></div>
       <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="status-chip ${statusClass(p.status)}">${p.status}</span></div></div>
       <div class="detail-item full"><div class="dl">Catatan</div><div class="dv">${p.catatan||'-'}</div></div>
+      ${notaHtml}
     </div>`;
   openModal('modal-view');
 }
 function printDetail(){ window.print(); }
-
-/* ---------------- NAVIGASI: DETAIL DIBUKA DARI MODAL BULAN ---------------- */
-let returnToMonth = null;
-function viewItemFromMonth(id, year, monthNum){
-  returnToMonth = {year, monthNum};
-  closeModal('modal-month');
-  viewItem(id);
-}
-function closeViewModal(){
-  closeModal('modal-view');
-  if(returnToMonth){
-    const {year, monthNum} = returnToMonth;
-    returnToMonth = null;
-    showMonthDetail(year, monthNum);
-  }
-}
 function printItem(id){
   viewItem(id);
   setTimeout(()=>window.print(), 200);
@@ -1345,9 +1209,11 @@ function fillProfile(){
   $('p-divisi').value = currentUser.divisi;
   $('p-jabatan').value = currentUser.jabatan;
   $('p-role').value = currentUser.role;
+  $('p-email').value = currentUser.email||'';
+  $('p-hp').value = currentUser.hp||'';
 }
 async function saveProfile(){
-  const payload = {id:currentUser.id, nama:$('p-nama').value, divisi:$('p-divisi').value, jabatan:$('p-jabatan').value};
+  const payload = {id:currentUser.id, nama:$('p-nama').value, divisi:$('p-divisi').value, jabatan:$('p-jabatan').value, email:$('p-email').value, hp:$('p-hp').value};
   const res = await api('saveUser', payload);
   if(res.success){
     currentUser = {...currentUser, ...payload};
@@ -1364,13 +1230,16 @@ async function changePassword(){
   else toast(res.error||'Gagal mengubah password.', 'error');
 }
 
-/* ---------------- SETTINGS: USER MANAGEMENT ---------------- */
+/* ---------------- SETTINGS: USER MANAGEMENT ----------------
+   Hanya Admin IT yang dapat memanggil getUsers (backend juga menolak
+   permintaan ini dari role lain), sehingga pengguna non-admin tidak
+   pernah melihat daftar user lain maupun data password. --------------- */
 let allUsers = [];
 async function renderUserMgmt(){
   fillProfile();
-  fillConfigFields();
   if(currentUser.role !== 'Admin IT') return;
   const res = await api('getUsers', {});
+  if(!res.success){ toast(res.error || 'Gagal memuat pengguna.', 'error'); return; }
   allUsers = res.data || [];
   $('usermgmt-body').innerHTML = allUsers.map(u=>`
     <tr>
@@ -1386,12 +1255,13 @@ async function renderUserMgmt(){
     </tr>`).join('');
 }
 function openUserForm(id){
+  if(currentUser.role !== 'Admin IT') return;
   editingUserId = id || null;
   $('user-form-title').textContent = id ? 'Edit Pengguna' : 'Daftarkan User Baru';
   if(id){
     const u = allUsers.find(x=>x.id===id);
     $('uf-id').value=u.id; $('uf-nama').value=u.nama; $('uf-username').value=u.username;
-    $('uf-password').value=''; $('uf-jabatan').value=u.jabatan||''; $('uf-divisi').value=u.divisi||''; $('uf-role').value=u.role;
+    $('uf-password').value=u.password||''; $('uf-jabatan').value=u.jabatan||''; $('uf-divisi').value=u.divisi||''; $('uf-role').value=u.role;
   } else {
     ['uf-id','uf-nama','uf-username','uf-password','uf-jabatan','uf-divisi'].forEach(i=>$(i).value='');
     $('uf-role').value='Staff Pengadaan';
@@ -1419,40 +1289,21 @@ async function deleteUser(id){
   else toast(res.error||'Gagal menghapus.', 'error');
 }
 
-/* ---------------- SETTINGS: KONEKSI DATABASE ---------------- */
-function fillConfigFields(){
-  $('cfg-url').value = CFG.scriptUrl || '';
-  $('cfg-sheet').value = CFG.spreadsheetId || '';
-  $('cfg-drive').value = CFG.driveFolderId || '';
-}
-function saveConfig(){
-  CFG.scriptUrl = $('cfg-url').value.trim();
-  CFG.spreadsheetId = $('cfg-sheet').value.trim();
-  CFG.driveFolderId = $('cfg-drive').value.trim();
-  toast(CFG.scriptUrl ? 'Konfigurasi disimpan. Aplikasi kini memakai backend Apps Script.' : 'Konfigurasi kosong — kembali ke Mode Demo.', 'success');
-}
-async function testConnection(){
-  saveConfig();
-  const res = await api('ping', {});
-  if(res.success) toast(res.message || 'Koneksi berhasil.', 'success');
-  else toast(res.error || 'Koneksi gagal.', 'error');
-}
-
 /* ---------------- MODAL HELPERS ---------------- */
 function openModal(id){ $(id).classList.add('show'); }
 function closeModal(id){ $(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
-  ov.addEventListener('click', e=>{
-    if(e.target!==ov) return;
-    if(ov.id==='modal-view'){ closeViewModal(); }
-    else { ov.classList.remove('show'); }
-  });
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
 });
 
 /* ---------------- ENTER KEY ON LOGIN ---------------- */
 ['login-username','login-password'].forEach(id=>{
   $(id).addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 });
+
+/* ---------------- BOOTSTRAP: pulihkan sesi jika ada (lihat restoreSession_) ---------------- */
+restoreSession_();
+
 </script>
 </body>
 </html>
