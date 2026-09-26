@@ -14,7 +14,7 @@
 const CONFIG = {
   // ID Spreadsheet database. Kosongkan jika script ini dibuat dari menu
   // Extensions > Apps Script di dalam Spreadsheet-nya (bound script).
-  SPREADSHEET_ID: '1OwCTbIY2cZVcETiaROKy6jAp6wUVbO_eRliUhDXF0Gw',
+  SPREADSHEET_ID: '12N3wlKQ7Tv3JoqsFBnZU6XEksB_MiAaIYpA7MoxXrJs',
 
   // Folder induk di Google Drive untuk foto nota.
   // https://drive.google.com/drive/folders/1MJ_Jsq3sHkiOJDccU4lBnH7iypp4ap_5
