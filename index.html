@@ -608,7 +608,7 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
       <!-- SETTINGS -->
       <section id="view-settings" class="view" style="display:none;">
         <div class="page-head">
-          <div><h1>Pengaturan</h1><p>Kelola profil pengguna</p></div>
+          <div><h1>Pengaturan</h1><p>Kelola profil pengguna dan koneksi database</p></div>
         </div>
 
         <div class="card section-card">
@@ -660,6 +660,30 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
             <thead><tr><th>Nama</th><th>Username</th><th>Password</th><th>Jabatan</th><th>Divisi</th><th>Role</th><th>Aksi</th></tr></thead>
             <tbody id="usermgmt-body"></tbody>
           </table></div>
+        </div>
+
+        <div class="card section-card" id="dbconfig-card" style="display:none;">
+          <div class="section-title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            Koneksi Database
+          </div>
+          <p class="section-desc">Hubungkan ke Google Spreadsheet sebagai database (via Google Apps Script). Kosongkan URL untuk memakai Mode Demo. Spreadsheet ID &amp; Folder ID boleh diisi ID saja atau link lengkapnya. Hanya terlihat oleh Admin IT.</p>
+          <div class="field"><label>URL Google API / Apps Script</label><input id="cfg-url" type="text" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
+          <div class="profile-grid">
+            <div class="field"><label>Spreadsheet ID</label><input id="cfg-sheet" type="text" placeholder="1s_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx atau link Spreadsheet"></div>
+            <div class="field"><label>Google Drive Folder ID</label><input id="cfg-drive" type="text" placeholder="1HvUvxxxxxxxxxxxxxxxxxxxxxxx atau link folder"></div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="width:auto;" id="btn-save-conn" onclick="saveConfig()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+              Simpan Konfigurasi
+            </button>
+            <button class="btn btn-outline" id="btn-test-conn" onclick="testConnection()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+              Test Koneksi
+            </button>
+          </div>
+          <div id="conn-result" class="section-desc" style="display:none; margin-top:12px; padding:10px 12px; border-radius:10px; background:#f4f6fb; white-space:pre-line;"></div>
         </div>
       </section>
 
@@ -813,10 +837,13 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
 // Mode otomatis: jika scriptUrl terkonfigurasi → pakai Google Sheets
 // Jika tidak → pakai localStorage (mode demo)
 // ================= KONFIGURASI BACKEND =================
-// Isi dengan URL Web App Apps Script (Deploy > Manage deployments > URL yang berakhiran /exec).
-// Biarkan kosong ('') untuk memakai Mode Demo (data tersimpan di browser).
-const APPS_SCRIPT_URL = '';
+// URL bawaan Web App Apps Script (berakhiran /exec). Admin IT juga bisa mengubahnya
+// dari menu Pengaturan > Koneksi Database (tersimpan di browser tersebut).
+// Kosong ('') = Mode Demo (data tersimpan di browser).
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjS72WXFtpYPhBLOtxHMshJeAzHdHyWjzgn6LBwl6nOqPHEIJi55BvDonmVNksBSPn4w/exec';
+const CFG_URL_KEY = 'sippi_dexa_script_url_v1';
 const CFG = { scriptUrl: APPS_SCRIPT_URL };
+try{ const u = localStorage.getItem(CFG_URL_KEY); if(u !== null) CFG.scriptUrl = u; }catch(e){}
 
 const LS_KEYS = { users:'sippi_dexa_users_v1', pengadaan:'sippi_dexa_pengadaan_v1', nextP:'sippi_dexa_nextp_v1', session:'sippi_dexa_session_v1', view:'sippi_dexa_view_v1' };
 let lsAvailable = true;
@@ -1011,6 +1038,12 @@ function demoApi(action, payload){
       DB.users = DB.users.filter(u=>u.id!==payload.id);
       persistDemo();
       return {success:true};
+    case 'getConfig':
+    case 'testConnection':
+    case 'saveConfig':
+      if(!isAdmin) return {success:false, code:'FORBIDDEN', error:'Hanya Admin IT yang dapat mengelola koneksi database.'};
+      if(action==='getConfig') return {success:true, data:{spreadsheetId:'', driveFolderId:''}};
+      return {success:true, message:'Mode Demo aktif — isi URL Apps Script untuk terhubung ke Google Spreadsheet.'};
     case 'ping': return {success:true, message: lsAvailable ? 'Mode Demo aktif — data tersimpan di penyimpanan lokal browser ini (belum terhubung ke Apps Script).' : 'Mode Demo aktif — penyimpanan lokal browser tidak tersedia di sini, data sementara (reset saat reload).'};
     case 'resetDemo':
       DB = {users:[...SEED_USERS], pengadaan:[...SEED_PENGADAAN]};
@@ -1081,6 +1114,7 @@ function closeSidebar(){ $('sidebar').classList.remove('open'); $('sidebar-overl
 function fillSidebarUser(){
   $('dash-username').textContent = currentUser.nama;
   $('usermgmt-card').style.display = currentUser.role==='Admin IT' ? 'block' : 'none';
+  $('dbconfig-card').style.display = currentUser.role==='Admin IT' ? 'block' : 'none';
 
   $('chip-avatar').textContent = initials(currentUser.nama);
   $('chip-name').textContent = currentUser.nama;
@@ -1499,6 +1533,7 @@ let allUsers = [];
 async function renderUserMgmt(){
   fillProfile();
   if(currentUser.role !== 'Admin IT'){ allUsers = []; $('usermgmt-body').innerHTML = ''; return; }
+  fillConfigFields();
   const res = await api('getUsers', {});
   if(!res.success){ $('usermgmt-body').innerHTML = ''; if(res.code!=='AUTH') toast(res.error || 'Gagal memuat data pengguna.', 'error'); return; }
   allUsers = res.data || [];
@@ -1554,6 +1589,84 @@ async function deleteUser(id){
   const res = await api('deleteUser', {id});
   if(res.success){ toast('Pengguna dihapus.', 'success'); renderUserMgmt(); }
   else toast(res.error||'Gagal menghapus.', 'error');
+}
+
+/* ---------------- SETTINGS: KONEKSI DATABASE (khusus Admin IT) ---------------- */
+function showConnResult(msg, ok){
+  const el = $('conn-result');
+  el.style.display = msg ? 'block' : 'none';
+  el.style.color = ok ? '#1a7f45' : '#b8150f';
+  el.textContent = msg || '';
+}
+async function fillConfigFields(){
+  if(!currentUser || currentUser.role !== 'Admin IT') return;
+  $('cfg-url').value = CFG.scriptUrl || '';
+  showConnResult('');
+  const res = await api('getConfig', {});
+  if(res.success && res.data){
+    $('cfg-sheet').value = res.data.spreadsheetId || '';
+    $('cfg-drive').value = res.data.driveFolderId || '';
+  }
+}
+async function postTo(url, body){
+  try{
+    const r = await fetch(url, {method:'POST', body: JSON.stringify(body)});
+    const t = await r.text();
+    try{ return JSON.parse(t); }catch(e){ return {success:false, error:'Server tidak merespons JSON (status '+r.status+'). Pastikan URL benar, sudah di-deploy ulang, dan akses "Anyone".'}; }
+  }catch(err){ return {success:false, error:'Gagal menghubungi server: '+err}; }
+}
+async function testConnection(){
+  if(currentUser.role !== 'Admin IT') return;
+  const url = $('cfg-url').value.trim();
+  const body = {spreadsheetId:$('cfg-sheet').value.trim(), driveFolderId:$('cfg-drive').value.trim()};
+  $('btn-test-conn').disabled = true; showConnResult('Menguji koneksi...', true);
+  let res;
+  if(!url){
+    res = await demoApi('testConnection', {token:authToken});
+  } else if(url === CFG.scriptUrl){
+    res = await api('testConnection', body);
+  } else {
+    // URL baru: cek dulu servernya hidup (belum bisa cek spreadsheet sebelum login ke server baru)
+    res = await postTo(url, {action:'ping'});
+    if(res.success) res.message = (res.message||'Server terhubung.') + ' Klik "Simpan Konfigurasi" lalu login ulang untuk mengecek Spreadsheet & Drive.';
+  }
+  $('btn-test-conn').disabled = false;
+  if(res.code === 'AUTH') return;
+  showConnResult(res.success ? (res.message||'Koneksi berhasil.') : (res.error||'Koneksi gagal.'), !!res.success);
+  toast(res.success ? 'Koneksi berhasil.' : 'Koneksi gagal.', res.success ? 'success' : 'error');
+}
+async function saveConfig(){
+  if(currentUser.role !== 'Admin IT') return;
+  const url = $('cfg-url').value.trim();
+  if(url && !/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){
+    showConnResult('URL harus berupa link Web App Apps Script (https://script.google.com/macros/s/.../exec).', false); return;
+  }
+  // 1) URL server berubah -> simpan di browser, lalu login ulang ke server tersebut
+  if(url !== (CFG.scriptUrl||'')){
+    if(url){
+      const ping = await postTo(url, {action:'ping'});
+      if(!ping.success){ showConnResult(ping.error||'Server tidak dapat dihubungi.', false); return; }
+    }
+    if(!confirm('URL server akan diganti. Anda perlu login ulang setelah ini. Lanjutkan?')) return;
+    CFG.scriptUrl = url;
+    try{ localStorage.setItem(CFG_URL_KEY, url); }catch(e){}
+    forceLogout(url ? 'URL server diperbarui. Silakan login kembali.' : 'Kembali ke Mode Demo. Silakan login kembali.');
+    return;
+  }
+  // 2) URL sama -> perbarui Spreadsheet ID & Folder Drive di server
+  if(!CFG.scriptUrl){ showConnResult('Mode Demo: isi URL Apps Script terlebih dahulu.', false); return; }
+  const sid = $('cfg-sheet').value.trim(), fid = $('cfg-drive').value.trim();
+  if(!sid || !fid){ showConnResult('Spreadsheet ID dan Google Drive Folder ID wajib diisi.', false); return; }
+  if(!confirm('Simpan koneksi database baru? Semua pengguna akan memakai Spreadsheet & folder ini.')) return;
+  $('btn-save-conn').disabled = true; showConnResult('Menyimpan & mengecek database...', true);
+  const res = await api('saveConfig', {spreadsheetId:sid, driveFolderId:fid});
+  $('btn-save-conn').disabled = false;
+  if(res.code === 'AUTH') return;
+  showConnResult(res.success ? res.message : (res.error||'Gagal menyimpan.'), !!res.success);
+  if(res.success){
+    toast('Koneksi database disimpan.', 'success');
+    if(res.data){ $('cfg-sheet').value = res.data.spreadsheetId; $('cfg-drive').value = res.data.driveFolderId; }
+  } else toast('Gagal menyimpan koneksi.', 'error');
 }
 
 /* ---------------- MODAL HELPERS ---------------- */
