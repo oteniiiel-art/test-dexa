@@ -77,9 +77,6 @@ function route_(req) {
     case 'savePengadaan':  return withLock_(() => savePengadaan_(req, me));
     case 'deletePengadaan':return withLock_(() => deletePengadaan_(req));
     case 'getUsers':       return getUsers_(me);
-    case 'getConfig':      return adminOnly_(me, () => getConfig_());
-    case 'testConnection': return adminOnly_(me, () => testConnection_(req));
-    case 'saveConfig':     return adminOnly_(me, () => withLock_(() => saveConfig_(req, me)));
     case 'saveUser':       return withLock_(() => saveUser_(req, me));
     case 'deleteUser':     return withLock_(() => deleteUser_(req, me));
     default:               return { success: false, error: 'Aksi tidak dikenal.' };
@@ -238,13 +235,8 @@ function usersSheet_() {
     }
   });
 
-  // Sheet kosong: buat 1 akun Admin awal. SEGERA GANTI passwordnya setelah login pertama.
-  if (!rows.length) {
-    upsertRow_(sheet, USER_COLS, {
-      id: 'U001', nama: 'Admin IT', username: 'admin', password: 'admin123',
-      jabatan: 'Admin IT', divisi: 'IT', role: CONFIG.ROLE_ADMIN, email: '', hp: ''
-    }, TEXT_USER_COLS);
-  }
+  // Tidak ada lagi akun bawaan otomatis. Jika sheet Users kosong,
+  // jalankan buatAdminBaru() dari editor Apps Script (lihat bagian bawah file).
   return sheet;
 }
 
@@ -328,7 +320,7 @@ function pengadaanSheet_() {
  * Contoh: Nota Pengadaan / RS Dexa Medika Semarang / 2026-09-21 / Nota_PGD-DXA-2026-0007_1.jpg
  */
 function uploadNota_(rec, files) {
-  const root = DriveApp.getFolderById(dbConfig_().driveFolderId);
+  const root = DriveApp.getFolderById(CONFIG.ROOT_FOLDER_ID);
   const rsName = safeName_(rec.instansi) || 'Tanpa Nama RS';
   const tgl = /^\d{4}-\d{2}-\d{2}$/.test(String(rec.tglAjukan || '')) ? rec.tglAjukan : nowStr_().slice(0, 10);
 
@@ -361,103 +353,11 @@ function safeName_(s) {
   return String(s || '').replace(/[\\\/:*?"<>|#\[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 }
 
-/* ====================== KONEKSI DATABASE (ADMIN) ====================== */
-
-function adminOnly_(me, fn) {
-  if (!isAdmin_(me)) return { success: false, code: 'FORBIDDEN', error: 'Hanya Admin IT yang dapat mengelola koneksi database.' };
-  return fn();
-}
-
-/** ID aktif: yang disimpan Admin lewat web (Script Properties), jika tidak ada pakai CONFIG. */
-function dbConfig_() {
-  const p = PropertiesService.getScriptProperties();
-  return {
-    spreadsheetId: p.getProperty('SPREADSHEET_ID') || CONFIG.SPREADSHEET_ID,
-    driveFolderId: p.getProperty('ROOT_FOLDER_ID') || CONFIG.ROOT_FOLDER_ID
-  };
-}
-
-/** Ambil ID dari input: boleh ID saja atau link lengkap Spreadsheet / folder Drive. */
-function extractId_(v) {
-  v = String(v || '').trim();
-  const m = v.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || v.match(/\/folders\/([a-zA-Z0-9_-]{20,})/) || v.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
-  return m ? m[1] : v;
-}
-
-function getConfig_() {
-  const c = dbConfig_();
-  return { success: true, data: { spreadsheetId: c.spreadsheetId, driveFolderId: c.driveFolderId } };
-}
-
-/** Cek akses Spreadsheet & folder Drive, tanpa menyimpan apa pun. */
-function checkDb_(sid, fid) {
-  const info = { spreadsheet: null, folder: null, errors: [] };
-  try {
-    const ss = SpreadsheetApp.openById(sid);
-    const names = ss.getSheets().map(x => x.getName());
-    const count = (list) => {
-      const w = list.map(n => n.toLowerCase());
-      const sh = ss.getSheets().find(x => w.indexOf(x.getName().toLowerCase()) > -1);
-      return sh ? Math.max(sh.getLastRow() - 1, 0) : null;
-    };
-    info.spreadsheet = { name: ss.getName(), url: ss.getUrl(), sheets: names,
-      users: count(CONFIG.SHEET_USERS), pengadaan: count(CONFIG.SHEET_PENGADAAN) };
-  } catch (err) { info.errors.push('Spreadsheet tidak dapat dibuka (' + err.message + ')'); }
-  try {
-    const f = DriveApp.getFolderById(fid);
-    info.folder = { name: f.getName(), url: f.getUrl() };
-  } catch (err) { info.errors.push('Folder Drive tidak dapat dibuka (' + err.message + ')'); }
-  return info;
-}
-
-function testConnection_(req) {
-  const c = dbConfig_();
-  const sid = extractId_(req.spreadsheetId) || c.spreadsheetId;
-  const fid = extractId_(req.driveFolderId) || c.driveFolderId;
-  const info = checkDb_(sid, fid);
-  if (info.errors.length) return { success: false, error: info.errors.join(' | '), data: info };
-  const s = info.spreadsheet;
-  const msg = 'Terhubung: Spreadsheet "' + s.name + '" (' +
-    (s.users === null ? 'sheet Users belum ada' : s.users + ' user') + ', ' +
-    (s.pengadaan === null ? 'sheet Pengadaan belum ada' : s.pengadaan + ' data pengadaan') +
-    ') & folder "' + info.folder.name + '".';
-  return { success: true, message: msg, data: info };
-}
-
-/**
- * Simpan Spreadsheet ID & Folder ID baru. Sheet Users/Pengadaan dibuat otomatis bila belum ada.
- * Jika Spreadsheet baru belum punya user, akun Admin yang sedang login disalin ke sana
- * supaya tidak terkunci keluar.
- */
-function saveConfig_(req, me) {
-  const sid = extractId_(req.spreadsheetId);
-  const fid = extractId_(req.driveFolderId);
-  if (!sid || !fid) return { success: false, error: 'Spreadsheet ID dan Google Drive Folder ID wajib diisi.' };
-  const info = checkDb_(sid, fid);
-  if (info.errors.length) return { success: false, error: info.errors.join(' | ') };
-
-  const props = PropertiesService.getScriptProperties();
-  props.setProperty('SPREADSHEET_ID', sid);
-  props.setProperty('ROOT_FOLDER_ID', fid);
-
-  const uSheet = getSheet_(CONFIG.SHEET_USERS);
-  ensureHeaders_(uSheet, USER_COLS);
-  if (!readRows_(uSheet, USER_COLS).length) {
-    const copy = {};
-    USER_COLS.forEach(k => { copy[k] = me[k] === undefined ? '' : me[k]; });
-    upsertRow_(uSheet, USER_COLS, copy, TEXT_USER_COLS);
-  }
-  usersSheet_();
-  pengadaanSheet_();
-  return { success: true, message: 'Koneksi database disimpan: "' + info.spreadsheet.name + '" & folder "' + info.folder.name + '".', data: getConfig_().data };
-}
-
 /* =========================== SHEET HELPERS ============================ */
 
 function spreadsheet_() {
-  const sid = dbConfig_().spreadsheetId;
-  if (sid) {
-    try { return SpreadsheetApp.openById(sid); } catch (err) { /* fallback ke bound sheet */ }
+  if (CONFIG.SPREADSHEET_ID) {
+    try { return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID); } catch (err) { /* fallback ke bound sheet */ }
   }
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (!active) throw new Error('Spreadsheet tidak ditemukan. Periksa CONFIG.SPREADSHEET_ID.');
@@ -631,3 +531,4 @@ function buatAdminBaru() {
   Logger.log(msg);
   return msg;
 }
+
