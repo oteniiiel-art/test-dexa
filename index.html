@@ -608,7 +608,7 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
       <!-- SETTINGS -->
       <section id="view-settings" class="view" style="display:none;">
         <div class="page-head">
-          <div><h1>Pengaturan</h1><p>Kelola profil pengguna dan koneksi database</p></div>
+          <div><h1>Pengaturan</h1><p>Kelola profil pengguna</p></div>
         </div>
 
         <div class="card section-card">
@@ -660,30 +660,6 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
             <thead><tr><th>Nama</th><th>Username</th><th>Password</th><th>Jabatan</th><th>Divisi</th><th>Role</th><th>Aksi</th></tr></thead>
             <tbody id="usermgmt-body"></tbody>
           </table></div>
-        </div>
-
-        <div class="card section-card" id="dbconfig-card" style="display:none;">
-          <div class="section-title">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
-            Koneksi Database
-          </div>
-          <p class="section-desc">Hubungkan ke Google Spreadsheet sebagai database (via Google Apps Script). Kosongkan URL untuk memakai Mode Demo. Spreadsheet ID &amp; Folder ID boleh diisi ID saja atau link lengkapnya. Hanya terlihat oleh Admin IT.</p>
-          <div class="field"><label>URL Google API / Apps Script</label><input id="cfg-url" type="text" placeholder="https://script.google.com/macros/s/xxxxx/exec"></div>
-          <div class="profile-grid">
-            <div class="field"><label>Spreadsheet ID</label><input id="cfg-sheet" type="text" placeholder="1s_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx atau link Spreadsheet"></div>
-            <div class="field"><label>Google Drive Folder ID</label><input id="cfg-drive" type="text" placeholder="1HvUvxxxxxxxxxxxxxxxxxxxxxxx atau link folder"></div>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="width:auto;" id="btn-save-conn" onclick="saveConfig()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
-              Simpan Konfigurasi
-            </button>
-            <button class="btn btn-outline" id="btn-test-conn" onclick="testConnection()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-              Test Koneksi
-            </button>
-          </div>
-          <div id="conn-result" class="section-desc" style="display:none; margin-top:12px; padding:10px 12px; border-radius:10px; background:#f4f6fb; white-space:pre-line;"></div>
         </div>
       </section>
 
@@ -834,18 +810,15 @@ hr.divider{border:none; border-top:1px solid var(--border); margin:22px 0;}
 
 <script>
 // ==================== STORAGE & API ====================
-// Mode otomatis: jika scriptUrl terkonfigurasi → pakai Google Sheets
-// Jika tidak → pakai localStorage (mode demo)
-// ================= KONFIGURASI BACKEND =================
-// URL bawaan Web App Apps Script (berakhiran /exec). Admin IT juga bisa mengubahnya
-// dari menu Pengaturan > Koneksi Database (tersimpan di browser tersebut).
-// Kosong ('') = Mode Demo (data tersimpan di browser).
+// ================= KONFIGURASI SERVER =================
+// URL Web App Google Apps Script (Deploy > Manage deployments > URL berakhiran /exec).
+// Hanya bisa diubah dari file ini.
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjS72WXFtpYPhBLOtxHMshJeAzHdHyWjzgn6LBwl6nOqPHEIJi55BvDonmVNksBSPn4w/exec';
-const CFG_URL_KEY = 'sippi_dexa_script_url_v1';
 const CFG = { scriptUrl: APPS_SCRIPT_URL };
-try{ const u = localStorage.getItem(CFG_URL_KEY); if(u !== null) CFG.scriptUrl = u; }catch(e){}
 
-const LS_KEYS = { users:'sippi_dexa_users_v1', pengadaan:'sippi_dexa_pengadaan_v1', nextP:'sippi_dexa_nextp_v1', session:'sippi_dexa_session_v1', view:'sippi_dexa_view_v1' };
+const LS_KEYS = { session:'sippi_dexa_session_v1', view:'sippi_dexa_view_v1' };
+// Bersihkan sisa data Mode Demo lama (berisi akun & password demo) dari browser.
+try{ ['sippi_dexa_users_v1','sippi_dexa_pengadaan_v1','sippi_dexa_nextp_v1','sippi_dexa_script_url_v1'].forEach(k=>localStorage.removeItem(k)); }catch(e){}
 let lsAvailable = true;
 function lsGet(key, fallback){
   try{
@@ -856,49 +829,6 @@ function lsGet(key, fallback){
 function lsSet(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); }
   catch(e){ lsAvailable = false; /* penyimpanan browser tidak tersedia, lanjut pakai memori */ }
-}
-
-/* ---------------- SEED DATA (dipakai hanya jika localStorage masih kosong) ---------------- */
-const SEED_USERS = [
-    {id:'U001', nama:'Admin IT', username:'admin123', password:'admin123', jabatan:'IT Manager', divisi:'IT', role:'Admin IT', email:'admin@dexaarfindo.co.id'},
-    {id:'U002', nama:'Staff Pengadaan', username:'support', password:'123', jabatan:'IT Support', divisi:'IT', role:'Staff Pengadaan', email:'support@dexaarfindo.co.id'},
-    {id:'U003', nama:'Hot Otniel Pasaribu', username:'otniel', password:'123', jabatan:'IT Hardware', divisi:'IT Support', role:'Staff Pengadaan', email:'otniel@dexaarfindo.co.id'},
-    {id:'U004', nama:'Katarina Maruli Nababan', username:'katarina', password:'123', jabatan:'IT Koordinator', divisi:'IT Support', role:'Approver', email:'katarina@dexaarfindo.co.id'},
-];
-const SEED_PENGADAAN = [
-    {id:'P001', kode:'PGD-DXA-2026-0001', namaPerangkat:'Laptop Lenovo ThinkPad E14', instansi:'RS Dexa Medika Semarang', kategori:'Laptop', merk:'ThinkPad E14 Gen5', jumlah:2, satuan:'Unit', hargaSatuan:12500000, total:25000000, vendor:'PT. Mitra Solusi Teknologi', noPO:'PO-0921', divisi:'IT Support', tglAjukan:'2026-08-10', tglButuh:'2026-08-20', status:'Disetujui', tglBayar:'2026-08-22', metodeBayar:'Transfer', catatan:'Pengganti laptop rusak tim support.'},
-    {id:'P002', kode:'PGD-DXA-2026-0002', namaPerangkat:'Printer Epson L3210', instansi:'RS Dexa Medika Kudus', kategori:'Printer', merk:'Epson L3210', jumlah:3, satuan:'Unit', hargaSatuan:2350000, total:7050000, vendor:'CV. Sumber Berkah Komputer', noPO:'PO-0933', divisi:'Finance', tglAjukan:'2026-08-15', tglButuh:'2026-08-25', status:'Diajukan', tglBayar:'', metodeBayar:'', catatan:'Untuk cabang Semarang & Kudus.'},
-    {id:'P003', kode:'PGD-DXA-2026-0003', namaPerangkat:'Switch Cisco 24 Port', instansi:'Kantor Pusat Dexa Arfindo Pratama', kategori:'Jaringan (Router/Switch)', merk:'Cisco SG350-28', jumlah:1, satuan:'Unit', hargaSatuan:8900000, total:8900000, vendor:'PT. Netwave Indonesia', noPO:'', divisi:'IT Support', tglAjukan:'2026-08-20', tglButuh:'2026-09-01', status:'Draft', tglBayar:'', metodeBayar:'', catatan:'Upgrade jaringan kantor pusat.'},
-    {id:'P004', kode:'PGD-DXA-2026-0004', namaPerangkat:'Lisensi Microsoft 365 Business', instansi:'Kantor Pusat Dexa Arfindo Pratama', kategori:'Software & Lisensi', merk:'Microsoft 365 Business Standard', jumlah:25, satuan:'Lisensi', hargaSatuan:1450000, total:36250000, vendor:'PT. Datacomm Diangraha', noPO:'PO-0940', divisi:'HRD', tglAjukan:'2026-08-25', tglButuh:'2026-09-05', status:'Selesai', tglBayar:'2026-09-03', metodeBayar:'Transfer', catatan:'Perpanjangan tahunan seluruh divisi.'},
-    {id:'P005', kode:'PGD-DXA-2026-0005', namaPerangkat:'PC Rakitan Kasir', instansi:'Apotek K24 Cabang Baru', kategori:'Komputer / PC', merk:'Custom Build i3 12100', jumlah:5, satuan:'Unit', hargaSatuan:6200000, total:31000000, vendor:'Toko Komputer Jaya', noPO:'', divisi:'Operasional', tglAjukan:'2026-08-28', tglButuh:'2026-09-10', status:'Diajukan', tglBayar:'', metodeBayar:'', catatan:'Untuk apotek cabang baru.'},
-    {id:'P006', kode:'PGD-DXA-2026-0006', namaPerangkat:'UPS APC 1200VA', instansi:'RS Dexa Medika Semarang', kategori:'Aksesoris', merk:'APC Back-UPS BX1200', jumlah:8, satuan:'Unit', hargaSatuan:1150000, total:9200000, vendor:'PT. Mitra Solusi Teknologi', noPO:'', divisi:'IT Support', tglAjukan:'2026-09-01', tglButuh:'2026-09-12', status:'Ditolak', tglBayar:'', metodeBayar:'', catatan:'Anggaran belum disetujui kuartal ini.'},
-];
-
-/* ---------------- DEMO DATA STORE (localStorage, fallback in-memory) ---------------- */
-let DB = {
-  users: lsGet(LS_KEYS.users, SEED_USERS),
-  pengadaan: lsGet(LS_KEYS.pengadaan, SEED_PENGADAAN),
-};
-let nextP = lsGet(LS_KEYS.nextP, 7);
-
-// migrasi otomatis: perbaiki nama/role lama yang mungkin masih tersimpan
-// di localStorage dari versi aplikasi sebelumnya
-const NAME_MIGRATIONS = { 'Admin K24 IT':'Admin IT', 'Super Admin':'Admin IT', 'Marendi Harshevilla':'Katarina Maruli Nababan' };
-let migrated = false;
-DB.users.forEach(u=>{
-  if(NAME_MIGRATIONS[u.nama]){ u.nama = NAME_MIGRATIONS[u.nama]; migrated = true; }
-  if(NAME_MIGRATIONS[u.role]){ u.role = NAME_MIGRATIONS[u.role]; migrated = true; }
-  if(u.username==='rendi'){ u.username='katarina'; migrated = true; }
-});
-
-// simpan seed/migrasi pertama kali (agar konsisten & tersimpan sejak awal)
-lsSet(LS_KEYS.users, DB.users);
-lsSet(LS_KEYS.pengadaan, DB.pengadaan);
-lsSet(LS_KEYS.nextP, nextP);
-function persistDemo(){
-  lsSet(LS_KEYS.users, DB.users);
-  lsSet(LS_KEYS.pengadaan, DB.pengadaan);
-  lsSet(LS_KEYS.nextP, nextP);
 }
 
 /* ---------------- STATE ---------------- */
@@ -954,14 +884,15 @@ function toast(msg, type){
   window._toastTimer = setTimeout(()=>{ t.className = 'toast'; }, 2600);
 }
 
-/* ---------------- API LAYER (demo <-> real backend) ---------------- */
+/* ---------------- API LAYER (Google Apps Script) ---------------- */
 async function api(action, payload){
   const res = await apiRaw(action, payload || {});
   if(res && res.code === 'AUTH' && action !== 'login') forceLogout(res.error);
   return res;
 }
 async function apiRaw(action, payload){
-  if(CFG.scriptUrl){
+  if(!CFG.scriptUrl) return {success:false, error:'URL server belum diatur. Hubungi Admin IT.'};
+  {
     try{
       const res = await fetch(CFG.scriptUrl, {method:'POST', body: JSON.stringify({...payload, action, token:authToken})});
       const text = await res.text();
@@ -977,83 +908,7 @@ async function apiRaw(action, payload){
       return {success:false, error:String(err)};
     }
   }
-  return demoApi(action, {...payload, token:authToken});
 }
-function publicUser(u){ const {password, ...pub} = u; return pub; }
-function demoUserFromToken(t){
-  if(!t || String(t).indexOf('demo.') !== 0) return null;
-  const id = String(t).slice(5);
-  return DB.users.find(u=>u.id===id) || null;
-}
-function demoApi(action, payload){
-  const me = demoUserFromToken(payload.token);
-  payload = {...payload}; delete payload.token;
-  const isAdmin = !!me && me.role === 'Admin IT';
-  if(!['login','ping','resetDemo'].includes(action) && !me){
-    return {success:false, code:'AUTH', error:'Sesi berakhir. Silakan login kembali.'};
-  }
-  switch(action){
-    case 'login':{
-      const u = DB.users.find(u=>u.username===payload.username && u.password===payload.password);
-      return u ? {success:true, user:publicUser(u), token:'demo.'+u.id} : {success:false, error:'Username atau password salah.'};
-    }
-    case 'session': return {success:true, user:publicUser(me)};
-    case 'getPengadaan': return {success:true, data:DB.pengadaan};
-    case 'savePengadaan':{
-      if(payload.id){
-        const i = DB.pengadaan.findIndex(p=>p.id===payload.id);
-        if(i>-1) DB.pengadaan[i] = {...DB.pengadaan[i], ...payload};
-      } else {
-        const id = 'P'+String(nextP).padStart(3,'0');
-        const kode = 'PGD-DXA-2026-'+String(nextP).padStart(4,'0');
-        DB.pengadaan.push({...payload, id, kode});
-        nextP++;
-      }
-      persistDemo();
-      return {success:true};
-    }
-    case 'deletePengadaan':
-      DB.pengadaan = DB.pengadaan.filter(p=>p.id!==payload.id);
-      persistDemo();
-      return {success:true};
-    case 'getUsers':
-      if(!isAdmin) return {success:false, code:'FORBIDDEN', error:'Hanya Admin IT yang dapat melihat data pengguna.'};
-      return {success:true, data:DB.users};
-    case 'saveUser':{
-      if(!isAdmin){
-        if(!payload.id || payload.id !== me.id) return {success:false, code:'FORBIDDEN', error:'Anda tidak memiliki izin mengelola pengguna lain.'};
-        delete payload.role; delete payload.username;
-      }
-      if(payload.id){
-        const i = DB.users.findIndex(u=>u.id===payload.id);
-        if(i>-1) DB.users[i] = {...DB.users[i], ...payload};
-      } else {
-        DB.users.push({...payload, id:'U'+String(DB.users.length+1).padStart(3,'0')});
-      }
-      persistDemo();
-      return {success:true};
-    }
-    case 'deleteUser':
-      if(!isAdmin) return {success:false, code:'FORBIDDEN', error:'Hanya Admin IT yang dapat menghapus pengguna.'};
-      DB.users = DB.users.filter(u=>u.id!==payload.id);
-      persistDemo();
-      return {success:true};
-    case 'getConfig':
-    case 'testConnection':
-    case 'saveConfig':
-      if(!isAdmin) return {success:false, code:'FORBIDDEN', error:'Hanya Admin IT yang dapat mengelola koneksi database.'};
-      if(action==='getConfig') return {success:true, data:{spreadsheetId:'', driveFolderId:''}};
-      return {success:true, message:'Mode Demo aktif — isi URL Apps Script untuk terhubung ke Google Spreadsheet.'};
-    case 'ping': return {success:true, message: lsAvailable ? 'Mode Demo aktif — data tersimpan di penyimpanan lokal browser ini (belum terhubung ke Apps Script).' : 'Mode Demo aktif — penyimpanan lokal browser tidak tersedia di sini, data sementara (reset saat reload).'};
-    case 'resetDemo':
-      DB = {users:[...SEED_USERS], pengadaan:[...SEED_PENGADAAN]};
-      nextP = 7;
-      persistDemo();
-      return {success:true};
-    default: return {success:false, error:'Aksi tidak dikenal'};
-  }
-}
-
 /* ---------------- AUTH ---------------- */
 function togglePass(){
   const inp = $('login-password');
@@ -1114,7 +969,6 @@ function closeSidebar(){ $('sidebar').classList.remove('open'); $('sidebar-overl
 function fillSidebarUser(){
   $('dash-username').textContent = currentUser.nama;
   $('usermgmt-card').style.display = currentUser.role==='Admin IT' ? 'block' : 'none';
-  $('dbconfig-card').style.display = currentUser.role==='Admin IT' ? 'block' : 'none';
 
   $('chip-avatar').textContent = initials(currentUser.nama);
   $('chip-name').textContent = currentUser.nama;
@@ -1423,7 +1277,7 @@ async function deleteItem(id){
 }
 let currentPrintItem = null;
 function viewItem(id){
-  const p = allPengadaan.find(x=>x.id===id) || DB.pengadaan.find(x=>x.id===id);
+  const p = allPengadaan.find(x=>x.id===id);
   if(!p) return;
   currentPrintItem = p;
   $('view-body').innerHTML = `
@@ -1533,7 +1387,6 @@ let allUsers = [];
 async function renderUserMgmt(){
   fillProfile();
   if(currentUser.role !== 'Admin IT'){ allUsers = []; $('usermgmt-body').innerHTML = ''; return; }
-  fillConfigFields();
   const res = await api('getUsers', {});
   if(!res.success){ $('usermgmt-body').innerHTML = ''; if(res.code!=='AUTH') toast(res.error || 'Gagal memuat data pengguna.', 'error'); return; }
   allUsers = res.data || [];
@@ -1589,84 +1442,6 @@ async function deleteUser(id){
   const res = await api('deleteUser', {id});
   if(res.success){ toast('Pengguna dihapus.', 'success'); renderUserMgmt(); }
   else toast(res.error||'Gagal menghapus.', 'error');
-}
-
-/* ---------------- SETTINGS: KONEKSI DATABASE (khusus Admin IT) ---------------- */
-function showConnResult(msg, ok){
-  const el = $('conn-result');
-  el.style.display = msg ? 'block' : 'none';
-  el.style.color = ok ? '#1a7f45' : '#b8150f';
-  el.textContent = msg || '';
-}
-async function fillConfigFields(){
-  if(!currentUser || currentUser.role !== 'Admin IT') return;
-  $('cfg-url').value = CFG.scriptUrl || '';
-  showConnResult('');
-  const res = await api('getConfig', {});
-  if(res.success && res.data){
-    $('cfg-sheet').value = res.data.spreadsheetId || '';
-    $('cfg-drive').value = res.data.driveFolderId || '';
-  }
-}
-async function postTo(url, body){
-  try{
-    const r = await fetch(url, {method:'POST', body: JSON.stringify(body)});
-    const t = await r.text();
-    try{ return JSON.parse(t); }catch(e){ return {success:false, error:'Server tidak merespons JSON (status '+r.status+'). Pastikan URL benar, sudah di-deploy ulang, dan akses "Anyone".'}; }
-  }catch(err){ return {success:false, error:'Gagal menghubungi server: '+err}; }
-}
-async function testConnection(){
-  if(currentUser.role !== 'Admin IT') return;
-  const url = $('cfg-url').value.trim();
-  const body = {spreadsheetId:$('cfg-sheet').value.trim(), driveFolderId:$('cfg-drive').value.trim()};
-  $('btn-test-conn').disabled = true; showConnResult('Menguji koneksi...', true);
-  let res;
-  if(!url){
-    res = await demoApi('testConnection', {token:authToken});
-  } else if(url === CFG.scriptUrl){
-    res = await api('testConnection', body);
-  } else {
-    // URL baru: cek dulu servernya hidup (belum bisa cek spreadsheet sebelum login ke server baru)
-    res = await postTo(url, {action:'ping'});
-    if(res.success) res.message = (res.message||'Server terhubung.') + ' Klik "Simpan Konfigurasi" lalu login ulang untuk mengecek Spreadsheet & Drive.';
-  }
-  $('btn-test-conn').disabled = false;
-  if(res.code === 'AUTH') return;
-  showConnResult(res.success ? (res.message||'Koneksi berhasil.') : (res.error||'Koneksi gagal.'), !!res.success);
-  toast(res.success ? 'Koneksi berhasil.' : 'Koneksi gagal.', res.success ? 'success' : 'error');
-}
-async function saveConfig(){
-  if(currentUser.role !== 'Admin IT') return;
-  const url = $('cfg-url').value.trim();
-  if(url && !/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){
-    showConnResult('URL harus berupa link Web App Apps Script (https://script.google.com/macros/s/.../exec).', false); return;
-  }
-  // 1) URL server berubah -> simpan di browser, lalu login ulang ke server tersebut
-  if(url !== (CFG.scriptUrl||'')){
-    if(url){
-      const ping = await postTo(url, {action:'ping'});
-      if(!ping.success){ showConnResult(ping.error||'Server tidak dapat dihubungi.', false); return; }
-    }
-    if(!confirm('URL server akan diganti. Anda perlu login ulang setelah ini. Lanjutkan?')) return;
-    CFG.scriptUrl = url;
-    try{ localStorage.setItem(CFG_URL_KEY, url); }catch(e){}
-    forceLogout(url ? 'URL server diperbarui. Silakan login kembali.' : 'Kembali ke Mode Demo. Silakan login kembali.');
-    return;
-  }
-  // 2) URL sama -> perbarui Spreadsheet ID & Folder Drive di server
-  if(!CFG.scriptUrl){ showConnResult('Mode Demo: isi URL Apps Script terlebih dahulu.', false); return; }
-  const sid = $('cfg-sheet').value.trim(), fid = $('cfg-drive').value.trim();
-  if(!sid || !fid){ showConnResult('Spreadsheet ID dan Google Drive Folder ID wajib diisi.', false); return; }
-  if(!confirm('Simpan koneksi database baru? Semua pengguna akan memakai Spreadsheet & folder ini.')) return;
-  $('btn-save-conn').disabled = true; showConnResult('Menyimpan & mengecek database...', true);
-  const res = await api('saveConfig', {spreadsheetId:sid, driveFolderId:fid});
-  $('btn-save-conn').disabled = false;
-  if(res.code === 'AUTH') return;
-  showConnResult(res.success ? res.message : (res.error||'Gagal menyimpan.'), !!res.success);
-  if(res.success){
-    toast('Koneksi database disimpan.', 'success');
-    if(res.data){ $('cfg-sheet').value = res.data.spreadsheetId; $('cfg-drive').value = res.data.driveFolderId; }
-  } else toast('Gagal menyimpan koneksi.', 'error');
 }
 
 /* ---------------- MODAL HELPERS ---------------- */
